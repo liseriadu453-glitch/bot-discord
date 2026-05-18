@@ -51,6 +51,16 @@ const commands = [
                 .setDescription('Nom de famille RP')
                 .setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    new SlashCommandBuilder()
+        .setName('clear')
+        .setDescription('Supprimer un nombre de messages dans le salon')
+        .addIntegerOption(option =>
+            option.setName('nombre')
+                .setDescription('Nombre de messages à supprimer (1-100)')
+                .setRequired(true)
+                .setMinValue(1)
+                .setMaxValue(100)),
 ];
 
 // ═══════════════════════════════════════════
@@ -159,6 +169,31 @@ client.on('interactionCreate', async (interaction) => {
         } catch (error) {
             await interaction.reply({
                 content: `❌ Impossible de changer ton pseudo. Vérifie que le bot a la permission de gérer les pseudos et qu'il a un rôle supérieur au tien.`,
+                ephemeral: true
+            });
+        }
+    }
+
+    // ──── /clear ────
+    if (interaction.commandName === 'clear') {
+        const clearRoleId = process.env.CLEAR_ROLE_ID;
+        if (clearRoleId && !interaction.member.roles.cache.has(clearRoleId)) {
+            return interaction.reply({
+                content: `❌ Tu n'as pas le rôle nécessaire pour utiliser cette commande.`,
+                ephemeral: true
+            });
+        }
+
+        const nombre = interaction.options.getInteger('nombre');
+        try {
+            const deleted = await interaction.channel.bulkDelete(nombre, true);
+            await interaction.reply({
+                content: `✅ **${deleted.size}** message(s) supprimé(s) !`,
+                ephemeral: true
+            });
+        } catch (error) {
+            await interaction.reply({
+                content: `❌ Impossible de supprimer les messages. Les messages de plus de 14 jours ne peuvent pas être supprimés en masse.`,
                 ephemeral: true
             });
         }
